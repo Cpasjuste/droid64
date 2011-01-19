@@ -1,0 +1,246 @@
+diff -u ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/assem_arm.c r4300/new_dynarec/assem_arm.c
+--- ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/assem_arm.c	2010-10-26 12:50:30.000000000 -0400
++++ r4300/new_dynarec/assem_arm.c	2011-01-08 06:58:00.098998261 -0500
+@@ -66,6 +66,122 @@
+ 
+ #include "fpu.h"
+ 
++const u_int jump_table_symbols[] = {
++  (int)invalidate_addr,
++  (int)jump_vaddr,
++  (int)dyna_linker,
++  (int)dyna_linker_ds,
++  (int)verify_code,
++  (int)verify_code_vm,
++  (int)verify_code_ds,
++  (int)cc_interrupt,
++  (int)fp_exception,
++  (int)fp_exception_ds,
++  (int)jump_syscall,
++  (int)jump_eret,
++  (int)indirect_jump_indexed,
++  (int)indirect_jump,
++  (int)do_interrupt,
++  (int)MFC0,
++  (int)MTC0,
++  (int)TLBR,
++  (int)TLBP,
++  (int)TLBWI_new,
++  (int)TLBWR_new,
++  (int)jump_vaddr_r0,
++  (int)jump_vaddr_r1,
++  (int)jump_vaddr_r2,
++  (int)jump_vaddr_r3,
++  (int)jump_vaddr_r4,
++  (int)jump_vaddr_r5,
++  (int)jump_vaddr_r6,
++  (int)jump_vaddr_r7,
++  (int)jump_vaddr_r8,
++  (int)jump_vaddr_r9,
++  (int)jump_vaddr_r10,
++  (int)jump_vaddr_r12,
++  (int)mult64,
++  (int)multu64,
++  (int)div64,
++  (int)divu64,
++  (int)cvt_s_w,
++  (int)cvt_d_w,
++  (int)cvt_s_l,
++  (int)cvt_d_l,
++  (int)cvt_w_s,
++  (int)cvt_w_d,
++  (int)cvt_l_s,
++  (int)cvt_l_d,
++  (int)cvt_d_s,
++  (int)cvt_s_d,
++  (int)round_l_s,
++  (int)round_w_s,
++  (int)trunc_l_s,
++  (int)trunc_w_s,
++  (int)ceil_l_s,
++  (int)ceil_w_s,
++  (int)floor_l_s,
++  (int)floor_w_s,
++  (int)round_l_d,
++  (int)round_w_d,
++  (int)trunc_l_d,
++  (int)trunc_w_d,
++  (int)ceil_l_d,
++  (int)ceil_w_d,
++  (int)floor_l_d,
++  (int)floor_w_d,
++  (int)c_f_s,
++  (int)c_un_s,
++  (int)c_eq_s,
++  (int)c_ueq_s,
++  (int)c_olt_s,
++  (int)c_ult_s,
++  (int)c_ole_s,
++  (int)c_ule_s,
++  (int)c_sf_s,
++  (int)c_ngle_s,
++  (int)c_seq_s,
++  (int)c_ngl_s,
++  (int)c_lt_s,
++  (int)c_nge_s,
++  (int)c_le_s,
++  (int)c_ngt_s,
++  (int)c_f_d,
++  (int)c_un_d,
++  (int)c_eq_d,
++  (int)c_ueq_d,
++  (int)c_olt_d,
++  (int)c_ult_d,
++  (int)c_ole_d,
++  (int)c_ule_d,
++  (int)c_sf_d,
++  (int)c_ngle_d,
++  (int)c_seq_d,
++  (int)c_ngl_d,
++  (int)c_lt_d,
++  (int)c_nge_d,
++  (int)c_le_d,
++  (int)c_ngt_d,
++  (int)add_s,
++  (int)sub_s,
++  (int)mul_s,
++  (int)div_s,
++  (int)sqrt_s,
++  (int)abs_s,
++  (int)mov_s,
++  (int)neg_s,
++  (int)add_d,
++  (int)sub_d,
++  (int)mul_d,
++  (int)div_d,
++  (int)sqrt_d,
++  (int)abs_d,
++  (int)mov_d,
++  (int)neg_d
++};
++
++#define JUMP_TABLE_SIZE (sizeof(jump_table_symbols)*2)
++
+ /* Linker */
+ 
+ void set_jump_target(int addr,u_int target)
+@@ -823,8 +939,20 @@
+ }
+ u_int genjmp(u_int addr)
+ {
++  if(addr<4) return 0;
+   int offset=addr-(int)out-8;
+-  if(offset<-33554432||offset>=33554432) return 0;
++  if(offset<-33554432||offset>=33554432) {
++    int n;
++    for (n=0;n<sizeof(jump_table_symbols)/4;n++)
++    {
++      if(addr==jump_table_symbols[n])
++      {
++        offset=BASE_ADDR+(1<<TARGET_SIZE_2)-JUMP_TABLE_SIZE+n*8-(int)out-8;
++        break;
++      }
++    }
++  }
++  assert(offset>=-33554432&&offset<33554432);
+   return ((u_int)offset>>2)&0xffffff;
+ }
+ 
+@@ -2446,7 +2574,7 @@
+   assert((ptr[3]&0x0e)==0xa);
+   emit_loadlp(target,0);
+   emit_loadlp(addr,1);
+-  assert(addr>=0x7000000&&addr<0x7FFFFFF);
++  //assert(addr>=0x7000000&&addr<0x7FFFFFF);
+   //assert((target>=0x80000000&&target<0x80800000)||(target>0xA4000000&&target<0xA4001000));
+ //DEBUG >
+ #ifdef DEBUG_CYCLE_COUNT
+@@ -4350,4 +4478,22 @@
+   rounding_modes[1]=0x3<<22; // trunc
+   rounding_modes[2]=0x1<<22; // ceil
+   rounding_modes[3]=0x2<<22; // floor
++
++  // Trampolines for jumps >32M
++  int *ptr,*ptr2;
++  ptr=(int *)jump_table_symbols;
++  ptr2=(int *)((void *)BASE_ADDR+(1<<TARGET_SIZE_2)-JUMP_TABLE_SIZE);
++  while((void *)ptr<(void *)jump_table_symbols+sizeof(jump_table_symbols))
++  {
++    int offset=*ptr-(int)ptr2-8;
++    if(offset>=-33554432&&offset<33554432) {
++      *ptr2=0xea000000|((offset>>2)&0xffffff); // direct branch
++    }else{
++      *ptr2=0xe51ff004; // ldr pc,[pc,#-4]
++    }
++    ptr2++;
++    *ptr2=*ptr;
++    ptr++;
++    ptr2++;
++  }
+ }
+diff -u ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/assem_arm.h r4300/new_dynarec/assem_arm.h
+--- ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/assem_arm.h	2010-09-28 13:48:44.000000000 -0400
++++ r4300/new_dynarec/assem_arm.h	2011-01-08 06:56:30.982999248 -0500
+@@ -35,8 +35,9 @@
+ 
+ extern char *invc_ptr;
+ 
+-#define BASE_ADDR 0x7000000 // Code generator target address
+-#define TARGET_SIZE_2 24 // 2^24 = 16 megabytes
++#define BASE_ADDR 0x6000000 // Code generator target address
++//#define TARGET_SIZE_2 24 // 2^24 = 16 megabytes
++#define TARGET_SIZE_2 25 // 2^25 = 32 megabytes
+ 
+ // This is defined in linkage_arm.s, but gcc -O3 likes this better
+ #define rdram ((unsigned int *)0x80000000)
+diff -u ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/assem_x86.h r4300/new_dynarec/assem_x86.h
+--- ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/assem_x86.h	2010-09-28 13:28:10.000000000 -0400
++++ r4300/new_dynarec/assem_x86.h	2011-01-08 07:02:23.983001205 -0500
+@@ -13,6 +13,7 @@
+ 
+ #define BASE_ADDR 0x70000000 // Code generator target address
+ #define TARGET_SIZE_2 25 // 2^25 = 32 megabytes
++#define JUMP_TABLE_SIZE 0 // Not needed for 32-bit x86
+ 
+ /* x86 calling convention:
+    caller-save: %eax %ecx %edx
+diff -u ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/linkage_arm.s r4300/new_dynarec/linkage_arm.s
+--- ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/linkage_arm.s	2010-09-28 13:48:44.000000000 -0400
++++ r4300/new_dynarec/linkage_arm.s	2011-01-08 06:56:30.986999194 -0500
+@@ -719,18 +719,22 @@
+ 	.type	new_dyna_start, %function
+ new_dyna_start:
+ 	ldr	r12, .dlptr
++	ldr	r1, .tgtptr
+ 	mov	r0, #0xa4000000
+ 	stmia	r12, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+ 	sub	fp, r12, #28
++	ldr	r4, [r1]
+ 	add	r0, r0, #0x40
+ 	bl	new_recompile_block
+ 	ldr	r0, [fp, #next_interupt-dynarec_local]
+ 	ldr	r10, [fp, #reg_cop0+36-dynarec_local] /* Count */
+ 	str	r0, [fp, #last_count-dynarec_local]
+ 	sub	r10, r10, r0
+-	mov	pc, #0x7000000
++	mov	pc, r4
+ .dlptr:
+ 	.word	dynarec_local+28
++.tgtptr:
++	.word	out
+ 	.size	new_dyna_start, .-new_dyna_start
+ 	.align	2
+ 	.global	write_rdram_new
+diff -u ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/new_dynarec.c r4300/new_dynarec/new_dynarec.c
+--- ../Mupen64Plus-1-5-src-arm-20101026/r4300/new_dynarec/new_dynarec.c	2010-10-26 12:50:30.000000000 -0400
++++ r4300/new_dynarec/new_dynarec.c	2011-01-08 06:56:30.998999185 -0500
+@@ -10416,7 +10416,7 @@
+   
+   // If we're within 256K of the end of the buffer,
+   // start over from the beginning. (Is 256K enough?)
+-  if((int)out>BASE_ADDR+(1<<TARGET_SIZE_2)-MAX_OUTPUT_BLOCK_SIZE) out=(u_char *)BASE_ADDR;
++  if((int)out>BASE_ADDR+(1<<TARGET_SIZE_2)-MAX_OUTPUT_BLOCK_SIZE-JUMP_TABLE_SIZE) out=(u_char *)BASE_ADDR;
+   
+   // Trap writes to any of the pages we compiled
+   for(i=start>>12;i<=(start+slen*4)>>12;i++) {
+

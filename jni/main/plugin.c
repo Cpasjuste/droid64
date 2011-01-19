@@ -35,6 +35,29 @@
 #include "../r4300/interupt.h"
 #include "../r4300/r4300.h"
 
+#ifdef __ANDROID__
+void CaptureScreen ( char * Directory );
+void ChangeWindow (void);
+void CloseDLL (void);
+void DllAbout ( HWND hParent );
+void DllConfig ( HWND hParent );
+void DllTest ( HWND hParent );
+void DrawScreen (void);
+void GetDllInfo ( PLUGIN_INFO * PluginInfo );
+BOOL InitiateGFX (GFX_INFO Gfx_Info);
+void MoveScreen (int xpos, int ypos);
+void ProcessDList(void);
+void ProcessRDPList(void);
+void RomClosed (void);
+void RomOpen (void);
+void ShowCFB (void);
+void UpdateScreen (void);
+void ViStatusChanged (void);
+void ViWidthChanged (void);
+void ReadScreen (void **dest, int *width, int *height);
+void SetConfigDir (char *configDir);
+#endif
+
 CONTROL Controls[4];
 
 static char l_PluginDir[PATH_MAX] = {0};
@@ -642,6 +665,24 @@ void plugin_load_gfx_plugin(const char* gfx_name)
    
       if (handle_gfx)
      {
+#ifdef __ANDROID__
+    changeWindow = ChangeWindow;
+    closeDLL_gfx = CloseDLL;
+    dllAbout = DllAbout;
+    dllConfig = DllConfig;
+    dllTest = DllTest;
+    initiateGFX = InitiateGFX;
+    processDList = ProcessDList;
+    processRDPList = ProcessRDPList;
+    romClosed_gfx = RomClosed;
+    romOpen_gfx = RomOpen;
+    showCFB = ShowCFB;
+    updateScreen = UpdateScreen;
+    viStatusChanged = ViStatusChanged;
+    viWidthChanged = ViWidthChanged;
+    readScreen = ReadScreen;
+    captureScreen = CaptureScreen;
+#else
     changeWindow = dlsym(handle_gfx, "ChangeWindow");
     closeDLL_gfx = dlsym(handle_gfx, "CloseDLL");
     dllAbout = dlsym(handle_gfx, "DllAbout");
@@ -658,6 +699,7 @@ void plugin_load_gfx_plugin(const char* gfx_name)
     viWidthChanged = dlsym(handle_gfx, "ViWidthChanged");
     readScreen = dlsym(handle_gfx, "ReadScreen");
     captureScreen = dlsym(handle_gfx, "CaptureScreen");
+#endif
     setRenderingCallback = dlsym(handle_gfx, "SetRenderingCallback");
     
     fBRead = dlsym(handle_gfx, "FBRead");

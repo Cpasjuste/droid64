@@ -1845,8 +1845,11 @@ void r4300_execute()
         init_blocks();
         code = (void *)(actual->code+(actual->block[0x40/4].local_addr));
 #ifdef NEW_DYNAREC
+	printf ("new_dynarec_init()\n");
         new_dynarec_init();
+	printf ("new_dyna_start()\n");
         new_dyna_start();
+	printf ("new_dynarec_cleanup()\n");
         new_dynarec_cleanup();
 #else
         dyna_start(code);

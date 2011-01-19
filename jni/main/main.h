@@ -24,6 +24,12 @@
 
 #include <SDL_thread.h>
 
+/*
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+*/
+
 /* globals */
 extern int g_Noask;
 extern int g_NoaskParam;

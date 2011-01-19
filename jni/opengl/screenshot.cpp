@@ -27,9 +27,11 @@
 #include <dirent.h>
 #include <limits.h>
 
+#ifndef __ANDROID__
 #include <SDL_opengl.h>
 #include <SDL.h>
 #include <png.h>
+#endif
 
 #include "osd.h"
 
@@ -46,6 +48,7 @@ static char  l_SshotDir[PATH_MAX] = {0}; // pointer to screenshot dir specified 
 * PNG support functions for writing screenshot files
 */
 
+#ifndef __ANDROID__
 static void mupen_png_error(png_structp png_write, const char *message)
 {
     printf("PNG Error: %s\n", message);
@@ -55,9 +58,11 @@ static void mupen_png_warn(png_structp png_write, const char *message)
 {
     printf("PNG Warning: %s\n", message);
 }
+#endif
 
 static int SaveRGBBufferToFile(char *filename, unsigned char *buf, int width, int height, int pitch)
 {
+#ifndef __ANDROID__
     int i;
 
     // allocate PNG structures
@@ -110,6 +115,8 @@ static int SaveRGBBufferToFile(char *filename, unsigned char *buf, int width, in
     // close file
     fclose(savefile);
     // all done
+
+#endif
     return 0;
 }
 
@@ -118,6 +125,7 @@ static int SaveRGBBufferToFile(char *filename, unsigned char *buf, int width, in
 */
 extern "C" void SetScreenshotDir(const char *chDir)
 {
+#ifndef __ANDROID__
     // copy directory path
     strncpy(l_SshotDir, chDir, PATH_MAX - 1);
     l_SshotDir[PATH_MAX - 1] = '\0';
@@ -138,6 +146,7 @@ extern "C" void SetScreenshotDir(const char *chDir)
     }
 
     return;
+#endif
 }
 
 extern "C" int ValidScreenshotDir(void)
@@ -150,6 +159,7 @@ extern "C" int ValidScreenshotDir(void)
 
 extern "C" void TakeScreenshot(int iFrameNumber)
 {
+#ifndef __ANDROID__
     // start by getting the base file path
     char filepath[PATH_MAX], filename[PATH_MAX];
     char *pch, ch;
@@ -208,5 +218,6 @@ extern "C" void TakeScreenshot(int iFrameNumber)
     free(pucFrame);
     // print message -- this allows developers to capture frames and use them in the regression test
     main_message(1, 1, 1, OSD_BOTTOM_LEFT, tr("Captured screenshot for frame %i.\n"), iFrameNumber);
+#endif
 }
 

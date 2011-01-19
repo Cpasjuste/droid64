@@ -28,7 +28,17 @@
 /* This is the minimal configuration that can be used to build SDL */
 
 #include <stdarg.h>
+#include <stdint.h>
+#include <string.h>
 
+#define SDL_memset memset
+#define SDL_memcpy memcpy
+#define SDL_malloc malloc
+#define SDL_calloc calloc
+#define SDL_realloc realloc
+#define SDL_free free
+
+/*
 typedef signed char int8_t;
 typedef unsigned char uint8_t;
 typedef signed short int16_t;
@@ -37,6 +47,11 @@ typedef signed int int32_t;
 typedef unsigned int uint32_t;
 typedef unsigned int size_t;
 typedef unsigned long uintptr_t;
+*/
+
+//#define SDL_THREAD_PTHREAD 1
+#define HAVE_MALLOC 1
+#define SDL_TIMER_UNIX 1
 
 /* Enable the dummy audio driver (src/audio/dummy/\*.c) */
 #define SDL_AUDIO_DRIVER_DUMMY	1
@@ -48,13 +63,13 @@ typedef unsigned long uintptr_t;
 #define SDL_JOYSTICK_DISABLED	1
 
 /* Enable the stub shared object loader (src/loadso/dummy/\*.c) */
-#define SDL_LOADSO_DISABLED	1
+//#define SDL_LOADSO_DISABLED	1
 
 /* Enable the stub thread support (src/thread/generic/\*.c) */
 #define SDL_THREADS_DISABLED	1
 
 /* Enable the stub timer support (src/timer/dummy/\*.c) */
-#define SDL_TIMERS_DISABLED	1
+//#define SDL_TIMERS_DISABLED	1
 
 /* Enable the dummy video driver (src/video/dummy/\*.c) */
 #define SDL_VIDEO_DRIVER_DUMMY	1

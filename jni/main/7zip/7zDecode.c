@@ -31,6 +31,10 @@
 #include "BranchX86_2.h"
 #endif
 
+#ifdef __ANDROID__
+#include <string.h>
+#endif
+
 #define k_Copy 0
 #define k_LZMA 0x30101
 #define k_BCJ 0x03030103

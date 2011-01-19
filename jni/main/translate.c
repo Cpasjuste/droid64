@@ -19,7 +19,7 @@ Email                : blight@Ashitaka
 #include "main.h"
 #include "util.h"
 #include "config.h"
-
+#ifndef __ANDROID__
 #include <dirent.h>
 #include <limits.h>
 #include <stdio.h>
@@ -152,10 +152,11 @@ tr_load_language( const char *filename )
     fclose(f);
     return lang;
 }
-
+#endif
 void
 tr_delete_languages(void)
 {
+#ifndef __ANDROID__
     language_t *lang;
     translation_t *trans;
     list_node_t *lang_node,
@@ -178,12 +179,14 @@ tr_delete_languages(void)
         free(lang);
     }
     list_delete(&g_LanguageList);
+#endif
 }
 
 // functions
 static void
 tr_load_languages( void )
 {
+#ifndef __ANDROID__
     language_t *lang;
     char langdir[PATH_MAX], filename[PATH_MAX];
     const char *p;
@@ -216,10 +219,12 @@ tr_load_languages( void )
     }
 
     closedir(dir);
+#endif
 }
 
 void tr_init(void)
 {
+#ifndef __ANDROID__
     list_t langList;
     list_node_t *node;
     char *language;
@@ -239,11 +244,13 @@ void tr_init(void)
     }
     // free language name list
     list_delete(&langList);
+#endif
 }
 
 list_t
 tr_language_list( void )
 {
+#ifndef __ANDROID__
     language_t *lang;
     list_node_t *node;
     list_t list = NULL;
@@ -255,11 +262,15 @@ tr_language_list( void )
     }
 
     return list;
+#else
+	return NULL;
+#endif
 }
 
 int
 tr_set_language(const char *name)
 {
+#ifndef __ANDROID__
     language_t *lang;
     list_node_t *node;
 
@@ -272,14 +283,15 @@ tr_set_language(const char *name)
             return 0;
         }
     }
-
     g_Language = NULL;
+#endif
     return -1;
 }
 
 const char *
 tr( const char *text )
 {
+#ifndef __ANDROID__
     list_node_t *node;
     translation_t *trans;
     const char *ret = text;
@@ -298,5 +310,8 @@ tr( const char *text )
     }
 
     return ret;
+#else
+	return text;
+#endif
 }
 

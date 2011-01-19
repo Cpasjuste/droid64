@@ -32,7 +32,13 @@
 #endif
  
 #ifndef __WIN32__
+#ifndef __ANDROID__
 # include <ucontext.h> // extra signal types (for portability)
+#else
+#define EXIT_SUCCESS 0
+#define MUPEN_VERSION "droid64_00"
+#include <stdlib.h>
+#endif
 # include <libgen.h> // basename, dirname
 #endif
 
@@ -52,7 +58,9 @@
 #include <SDL_thread.h>
 
 #include "main.h"
+#ifndef __ANDROID__
 #include "version.h"
+#endif
 #include "config.h"
 #include "plugin.h"
 #include "rom.h"
@@ -389,6 +397,7 @@ void startEmulation(void)
         return;
     }
 
+#ifndef __ANDROID__
     /* Determine which plugins to use:
     *  -If valid plugin was specified at the commandline, use it
     *  -Else, get plugin from config. NOTE: gui code must change config if user switches plugin in the gui)
@@ -440,6 +449,7 @@ void startEmulation(void)
         error_message(tr("No RSP plugin specified."));
         return;
     }
+#endif
 
     // load the plugins. Do this outside the emulation thread for GUI
     // related things which cannot be done outside the main thread.
@@ -1117,6 +1127,7 @@ void parseCommandLine(int argc, char **argv)
             case 0:
                 break;
             case OPT_GFX:
+#ifndef __ANDROID__
                 if(plugin_scan_file(optarg, PLUGIN_TYPE_GFX))
                 {
                     g_GfxPlugin = optarg;
@@ -1125,8 +1136,10 @@ void parseCommandLine(int argc, char **argv)
                 {
                     printf("***Warning: GFX Plugin '%s' couldn't be loaded!\n", optarg);
                 }
+#endif
                 break;
             case OPT_AUDIO:
+#ifndef __ANDROID__
                 if(plugin_scan_file(optarg, PLUGIN_TYPE_AUDIO))
                 {
                     g_AudioPlugin = optarg;
@@ -1135,8 +1148,10 @@ void parseCommandLine(int argc, char **argv)
                 {
                     printf("***Warning: Audio Plugin '%s' couldn't be loaded!\n", optarg);
                 }
+#endif
                 break;
             case OPT_INPUT:
+#ifndef __ANDROID__
                 if(plugin_scan_file(optarg, PLUGIN_TYPE_CONTROLLER))
                 {
                     g_InputPlugin = optarg;
@@ -1145,8 +1160,10 @@ void parseCommandLine(int argc, char **argv)
                 {
                     printf("***Warning: Input Plugin '%s' couldn't be loaded!\n", optarg);
                 }
+#endif
                 break;
             case OPT_RSP:
+#ifndef __ANDROID__
                 if(plugin_scan_file(optarg, PLUGIN_TYPE_RSP))
                 {
                     g_RspPlugin = optarg;
@@ -1155,6 +1172,7 @@ void parseCommandLine(int argc, char **argv)
                 {
                     printf("***Warning: RSP Plugin '%s' couldn't be loaded!\n", optarg);
                 }
+#endif
                 break;
             case OPT_EMUMODE:
                 i = atoi(optarg);
@@ -1420,9 +1438,41 @@ int main(int argc, char *argv[])
     printf("| |  | | |_| | |_) |  __/ | | | (_) |__   _|  __/| | |_| \\__ \\  \n");
     printf("|_|  |_|\\__,_| .__/ \\___|_| |_|\\___/   |_| |_|   |_|\\__,_|___/  \n");
     printf("             |_|         http://code.google.com/p/mupen64plus/  \n");
-    printf("Version %s\n\n",MUPEN_VERSION);
+    printf("droid64_v00\n\n");
 
+
+#ifdef __ANDROID__
+	char *_argv[] = { 	
+				"/data/droid64/",
+
+				"--nogui",
+
+				"--configdir", 
+				"/data/droid64/config",
+
+				"--installdir", 
+				"/data/droid64",
+
+				"--audio", 
+				"/data/droid64/plugins/libdummy_audio.so",
+
+				"--gfx",
+				"/data/droid64/plugins/libdummy_video.so",
+
+				"--input",
+				"/data/droid64/plugins/libdummy_input.so",
+
+				"--rsp",
+				"/data/droid64/plugins/librsp_hle.so",
+
+				"/data/droid64/roms/mario64.zip" };
+	argc = 15;
+
+
+	parseCommandLine(argc, _argv);
+#else
     parseCommandLine(argc, argv);
+#endif
     setPaths();
     config_read();
 
@@ -1469,6 +1519,7 @@ int main(int argc, char *argv[])
 
     cheat_read_config();
 
+#ifndef __ANDROID__
     // try to get plugin folder path from the mupen64plus config file (except on mac where app bundles may be used)
     strncpy(dirpath, config_get_string("PluginDirectory", ""), PATH_MAX-1);
         
@@ -1483,6 +1534,7 @@ int main(int argc, char *argv[])
     // scan the plugin directory and set the config dir for the plugins
     plugin_scan_directory(dirpath);
     plugin_set_dirs(l_ConfigDir, l_InstallDir);
+#endif
 
 #ifndef NO_GUI
     if(l_GuiEnabled)
@@ -1565,7 +1617,9 @@ int main(int argc, char *argv[])
     g_romcache.rcstask = RCS_SHUTDOWN;
 #endif
     romdatabase_close();
+#ifndef __ANDROID__
     plugin_delete_list();
+#endif
     tr_delete_languages();
     config_delete();
 

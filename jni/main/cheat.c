@@ -33,6 +33,10 @@
 #include "util.h" // list utilities
 #include "config.h"
 
+#ifdef __ANDROID__
+#include <string.h>
+#endif
+
 #define CHEAT_FILENAME "cheats.cfg"
 
 // public globals

@@ -22,7 +22,12 @@
 // On-screen Display
 #include <limits.h>
 
+#ifndef __ANDROID__
 #include "OGLFT.h"
+#else
+#include <stdlib.h>
+#include <stdio.h>
+#endif
 #include "osd.h"
 
 extern "C" {
@@ -42,7 +47,9 @@ extern "C" {
 static int l_OsdInitialized = 0;
 
 static list_t l_messageQueue = NULL;
+#ifndef __ANDROID__
 static OGLFT::Monochrome *l_font;
+#endif
 static float l_fLineHeight = -1.0;
 
 static void animation_none(osd_message_t *);
@@ -60,6 +67,10 @@ static void (*l_animations[OSD_NUM_ANIM_TYPES])(osd_message_t *) = {
 // draw message on screen
 static void draw_message(osd_message_t *msg, int width, int height)
 {
+#ifdef __ANDROID__
+	printf( "draw_message() : %s\n", msg->text );
+//	__android_log_print(ANDROID_LOG_INFO, "droid64", msg->text );
+#else
     float x = 0.,
           y = 0.;
 
@@ -155,6 +166,7 @@ static void draw_message(osd_message_t *msg, int width, int height)
 
     // draw the text line
     l_font->draw(x, y, msg->text, msg->sizebox);
+#endif
 }
 
 // null animation handler
@@ -163,6 +175,7 @@ static void animation_none(osd_message_t *msg) { }
 // fade in/out animation handler
 static void animation_fade(osd_message_t *msg)
 {
+#ifndef __ANDROID__
     float alpha = 1.;
     float elapsed_frames;
     float total_frames = (float)msg->timeout[msg->state];
@@ -182,11 +195,13 @@ static void animation_fade(osd_message_t *msg)
         alpha = elapsed_frames / total_frames;
 
     l_font->setForegroundColor(msg->color[R], msg->color[G], msg->color[B], alpha);
+#endif
 }
 
 // sets message Y offset depending on where they are in the message queue
 static float get_message_offset(osd_message_t *msg, float fLinePos)
 {
+#ifndef __ANDROID__
     float offset = l_font->height() * fLinePos;
 
     switch(msg->corner)
@@ -200,12 +215,14 @@ static float get_message_offset(osd_message_t *msg, float fLinePos)
             return offset;
             break;
     }
+#endif
 }
 
 // public functions
 extern "C"
 void osd_init(int width, int height)
 {
+#ifndef __ANDROID__
     char fontpath[PATH_MAX];
 
     snprintf(fontpath, PATH_MAX, "%sfonts/%s", get_installpath(), FONT_FILENAME);
@@ -225,7 +242,7 @@ void osd_init(int width, int height)
 #if defined(GL_RASTER_POSITION_UNCLIPPED_IBM)
     glEnable(GL_RASTER_POSITION_UNCLIPPED_IBM);
 #endif
-
+#endif
     // set initialized flag
     l_OsdInitialized = 1;
 }
@@ -236,13 +253,14 @@ void osd_exit(void)
     list_node_t *node;
     osd_message_t *msg;
 
+#ifndef __ANDROID__
     // delete font renderer
     if (l_font)
     {
         delete l_font;
         l_font = NULL;
     }
-
+#endif
     // delete message queue
     list_foreach(l_messageQueue, node)
     {
@@ -270,6 +288,7 @@ void osd_render()
     if (!l_OsdInitialized || l_messageQueue == NULL)
         return;
 
+#ifndef __ANDROID__
     // get the viewport dimensions
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -328,6 +347,7 @@ void osd_render()
         l_fLineHeight = (bbox.y_max_ - bbox.y_min_) / 30.0;
     }
 
+#endif
     // keeps track of next message position for each corner
     float fCornerPos[OSD_NUM_CORNERS];
     for (i = 0; i < OSD_NUM_CORNERS; i++)
@@ -367,9 +387,11 @@ void osd_render()
         else
             fStartOffset = fCornerPos[msg->corner] + (fCornerScroll[msg->corner] * l_fLineHeight);
         msg->yoffset += get_message_offset(msg, fStartOffset);
-
+#ifdef __ANDROID__
+        draw_message(msg, NULL, NULL);
+#else
         draw_message(msg, viewport[2], viewport[3]);
-
+#endif
         msg->yoffset -= get_message_offset(msg, fStartOffset);
         fCornerPos[msg->corner] += l_fLineHeight;
     }
@@ -386,6 +408,7 @@ void osd_render()
     if(msg_to_delete)
         osd_delete_message(msg_to_delete);
 
+#ifndef __ANDROID__
     // restore the matrices
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
@@ -413,6 +436,7 @@ void osd_render()
         glEnableClientState(GL_SECONDARY_COLOR_ARRAY);
 
     glFinish();
+#endif
 }
 
 // creates a new osd_message_t, adds it to the message queue and returns it in case
